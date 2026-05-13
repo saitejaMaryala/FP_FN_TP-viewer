@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TR Experiment Visualizer</title>
+  <meta name="description" content="Compare triple-riding detection results across multiple experiment configurations side by side." />
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="icon">🔬</div>
+    TR Experiment Visualizer
+  </div>
+  <span class="header-meta">Triple-Riding Detection · Result Comparator</span>
+</header>
+
+<!-- APP LAYOUT -->
+<div class="app-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+
+    <div class="sidebar-section">
+      <h3>Experiments</h3>
+      <div class="select-all-row">
+        <button class="mini-btn" id="select-all">Select All</button>
+        <button class="mini-btn" id="clear-all">Clear All</button>
+      </div>
+      <div class="exp-list" id="exp-list">
+        <div class="state-box" style="padding:20px">
+          <div class="spinner"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <h3>Category</h3>
+      <div class="category-list" id="cat-list"></div>
+    </div>
+
+    <div class="sidebar-section">
+      <h3>Search / Filter</h3>
+      <div class="search-group">
+        <div class="search-input-wrap">
+          <span class="search-icon">📹</span>
+          <input class="search-input" id="search-video" type="text" placeholder="Filter by video ID…" />
+        </div>
+        <div class="search-input-wrap">
+          <span class="search-icon">#</span>
+          <input class="search-input" id="search-instance" type="text" placeholder="Filter by instance ID…" />
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <h3>Display</h3>
+      <div class="per-page-row">
+        <label for="per-page">Per page</label>
+        <select class="per-page-select" id="per-page">
+          <option value="10" selected>10</option>
+          <option value="20">20</option>
+          <option value="30">30</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+        </select>
+      </div>
+    </div>
+
+    <button class="apply-btn" id="apply-btn">⚡ Apply &amp; Load</button>
+
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main-content">
+
+    <!-- Stats bar -->
+    <div class="stats-bar" id="stats-bar">
+      <div class="stat-item">
+        <span class="stat-label">Instances:</span>
+        <span class="stat-value" id="total-count">—</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <span class="stat-label">Page:</span>
+        <span class="stat-value" id="page-info">—</span>
+      </div>
+      <div class="stat-divider"></div>
+      <!-- Triple Rider Toggle -->
+      <label class="triple-rider-toggle" id="triple-rider-toggle-label" title="Show only instances with triple rider frames">
+        <input type="checkbox" id="triple-rider-toggle" />
+        <span class="toggle-track"><span class="toggle-thumb"></span></span>
+        <span class="toggle-label-text">🚨 Show Only Triple Rider Instances</span>
+      </label>
+    </div>
+
+    <!-- Legend -->
+    <div class="legend-row" id="legend-row"></div>
+
+    <!-- Pagination Top -->
+    <div class="pagination" id="pagination-top" style="margin-top: 0; padding-bottom: 20px;"></div>
+
+    <!-- Results -->
+    <div id="results">
+      <div class="state-box">
+        <div class="state-icon">🔬</div>
+        <h3>Ready to Compare</h3>
+        <p>Select experiments and a category, then click <strong>Apply &amp; Load</strong>.</p>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" id="pagination"></div>
+
+  </main>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-title"></span>
+      <button class="modal-close" id="modal-close" title="Close (Esc)">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-nav-container">
+        <button class="modal-nav-btn nav-up" id="modal-nav-up" title="Up (ArrowUp)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+        </button>
+        <button class="modal-nav-btn nav-left" id="modal-nav-left" title="Left (ArrowLeft)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        </button>
+        <img id="modal-img" src="" alt="Full size image" />
+        <button class="modal-nav-btn nav-right" id="modal-nav-right" title="Right (ArrowRight)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+        <button class="modal-nav-btn nav-down" id="modal-nav-down" title="Down (ArrowDown)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/static/js/app.js"></script>
+</body>
+</html>
