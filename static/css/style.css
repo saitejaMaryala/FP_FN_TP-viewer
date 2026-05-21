@@ -539,6 +539,16 @@ header .logo .icon {
   border-color: var(--accent-purple);
 }
 
+/* Prediction overlay column — distinct green accent */
+.pred-label {
+  background: rgba(63, 185, 80, 0.12) !important;
+  color: var(--accent-green) !important;
+  border: 1px solid rgba(63, 185, 80, 0.3);
+}
+.pred-image-col .image-thumb-wrap:hover {
+  border-color: var(--accent-green);
+}
+
 .exp-name-label {
   font-size: 10px; font-weight: 600;
   text-transform: uppercase; letter-spacing: 0.06em;

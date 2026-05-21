@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TR Experiment Visualizer</title>
-  <meta name="description" content="Compare triple-riding detection results across multiple experiment configurations side by side." />
+  <title>FP / FN Viewer</title>
+  <meta name="description" content="View false positive and false negative detection results with original, mask, and prediction overlay side by side." />
   <link rel="stylesheet" href="/static/css/style.css" />
 </head>
 <body>
@@ -13,9 +13,9 @@
 <header>
   <div class="logo">
     <div class="icon">🔬</div>
-    TR Experiment Visualizer
+    FP / FN Viewer
   </div>
-  <span class="header-meta">Triple-Riding Detection · Result Comparator</span>
+  <span class="header-meta">Crop Segmentation · Result Viewer</span>
 </header>
 
 <!-- APP LAYOUT -->
@@ -23,19 +23,6 @@
 
   <!-- SIDEBAR -->
   <aside class="sidebar">
-
-    <div class="sidebar-section">
-      <h3>Experiments</h3>
-      <div class="select-all-row">
-        <button class="mini-btn" id="select-all">Select All</button>
-        <button class="mini-btn" id="clear-all">Clear All</button>
-      </div>
-      <div class="exp-list" id="exp-list">
-        <div class="state-box" style="padding:20px">
-          <div class="spinner"></div>
-        </div>
-      </div>
-    </div>
 
     <div class="sidebar-section">
       <h3>Category</h3>
@@ -46,12 +33,8 @@
       <h3>Search / Filter</h3>
       <div class="search-group">
         <div class="search-input-wrap">
-          <span class="search-icon">📹</span>
-          <input class="search-input" id="search-video" type="text" placeholder="Filter by video ID…" />
-        </div>
-        <div class="search-input-wrap">
-          <span class="search-icon">#</span>
-          <input class="search-input" id="search-instance" type="text" placeholder="Filter by instance ID…" />
+          <span class="search-icon">🔍</span>
+          <input class="search-input" id="search-filename" type="text" placeholder="Filter by filename…" />
         </div>
       </div>
     </div>
@@ -80,7 +63,7 @@
     <!-- Stats bar -->
     <div class="stats-bar" id="stats-bar">
       <div class="stat-item">
-        <span class="stat-label">Instances:</span>
+        <span class="stat-label">Images:</span>
         <span class="stat-value" id="total-count">—</span>
       </div>
       <div class="stat-divider"></div>
@@ -88,17 +71,14 @@
         <span class="stat-label">Page:</span>
         <span class="stat-value" id="page-info">—</span>
       </div>
-      <div class="stat-divider"></div>
-      <!-- Triple Rider Toggle -->
-      <label class="triple-rider-toggle" id="triple-rider-toggle-label" title="Show only instances with triple rider frames">
-        <input type="checkbox" id="triple-rider-toggle" />
-        <span class="toggle-track"><span class="toggle-thumb"></span></span>
-        <span class="toggle-label-text">🚨 Show Only Triple Rider Instances</span>
-      </label>
     </div>
 
-    <!-- Legend -->
-    <div class="legend-row" id="legend-row"></div>
+    <!-- Column legend -->
+    <div class="legend-row" id="legend-row">
+      <div class="legend-item"><span class="legend-dot" style="background:var(--accent-cyan)"></span>Original</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--accent-purple)"></span>GT Mask</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--accent-green)"></span>Prediction Overlay</div>
+    </div>
 
     <!-- Pagination Top -->
     <div class="pagination" id="pagination-top" style="margin-top: 0; padding-bottom: 20px;"></div>
@@ -107,8 +87,8 @@
     <div id="results">
       <div class="state-box">
         <div class="state-icon">🔬</div>
-        <h3>Ready to Compare</h3>
-        <p>Select experiments and a category, then click <strong>Apply &amp; Load</strong>.</p>
+        <h3>Ready to View</h3>
+        <p>Select a category and click <strong>Apply &amp; Load</strong>.</p>
       </div>
     </div>
 
