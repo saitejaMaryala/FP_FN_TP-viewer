@@ -3,7 +3,7 @@ from flask import Flask, jsonify, request, send_from_directory, render_template
 
 app = Flask(__name__)
 
-DATA_ROOT = "/ssd_scratch/sai.teja/tr_test_results_mod/results_default_clf_off"
+DATA_ROOT = "/ssd_scratch/sai.teja/tr_test_results_mod/results_default_Best"
 # DATA_ROOT = "/ssd_scratch/sai.teja/yolo_crop_seg_results/FP_FNs_OnlyRiders_v8l_onVid25"
 ORIGINAL_IMAGES_DIR = "/ssd_scratch/sai.teja/original_images_tr_results_mod"
 # ORIGINAL_IMAGES_DIR = "/ssd_scratch/sai.teja/onlyRider_CropSeg_Dataset_vid25/images/val"
@@ -46,6 +46,7 @@ def get_images():
     page = int(request.args.get("page", 1))
     per_page = int(request.args.get("per_page", 10))
     search = request.args.get("search", "").strip()
+    show_3r_only = request.args.get("show_3r_only", "false").lower() == "true"
 
     if category not in categories:
         return jsonify({"error": f"Invalid category: {category}"}), 400
@@ -64,6 +65,10 @@ def get_images():
     if search:
         all_files = [f for f in all_files if search.lower() in f.lower()]
 
+    # Apply 3R filter
+    if show_3r_only:
+        all_files = [f for f in all_files if f.endswith('_3r.jpg')]
+
     # Sort filenames
     all_files.sort()
 
@@ -78,13 +83,26 @@ def get_images():
     # Build results
     results = []
     for filename in page_files:
+        stem, ext = os.path.splitext(filename)
+        is_3r = stem.endswith('_3r')
+        if is_3r:
+            stem = stem[:-3]
+        
+        parts = stem.split('_')
+        if len(parts) >= 3:
+            frame = parts[-1]
+            video = '_'.join(parts[:-2])
+            original_filename = f"{video}_{frame}{ext}"
+        else:
+            original_filename = filename
+
         prediction_url = f"/pred_images/{category}/{filename}"
 
-        original_exists = os.path.isfile(os.path.join(ORIGINAL_IMAGES_DIR, filename))
-        original_url = f"/original_images/{filename}" if original_exists else None
+        original_exists = os.path.isfile(os.path.join(ORIGINAL_IMAGES_DIR, original_filename))
+        original_url = f"/original_images/{original_filename}" if original_exists else None
 
-        mask_exists = os.path.isfile(os.path.join(MASK_IMAGES_DIR, filename))
-        mask_url = f"/mask_images/{filename}" if mask_exists else None
+        mask_exists = os.path.isfile(os.path.join(MASK_IMAGES_DIR, original_filename))
+        mask_url = f"/mask_images/{original_filename}" if mask_exists else None
 
         results.append({
             "filename": filename,

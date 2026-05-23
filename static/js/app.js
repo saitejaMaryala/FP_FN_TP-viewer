@@ -8,13 +8,14 @@ const CAT_META = {
 
 // ── State ──
 let state = {
-  category: 'fn_classified',
+  category: 'fp_classified',
   page: 1,
   perPage: 10,
   totalPages: 1,
   total: 0,
   search: '',
   loading: false,
+  show3rOnly: false,
   currentResults: [],   // flat list of image objects from API
   // Modal position: { rowIdx, colIdx }  (0=original, 1=mask, 2=prediction)
   modalPos: null,
@@ -34,6 +35,8 @@ const modalOverlay    = document.getElementById('modal-overlay');
 const modalImg        = document.getElementById('modal-img');
 const modalTitle      = document.getElementById('modal-title');
 const modalClose      = document.getElementById('modal-close');
+const tripleRiderToggle = document.getElementById('triple-rider-toggle');
+const tripleRiderToggleLabel = document.getElementById('triple-rider-toggle-label');
 
 // ── Init ──
 async function init() {
@@ -96,6 +99,7 @@ async function loadImages() {
     page: state.page,
     per_page: state.perPage,
     search: state.search,
+    show_3r_only: state.show3rOnly,
   });
 
   try {
@@ -118,6 +122,18 @@ async function loadImages() {
   }
 }
 
+// ── Triple Rider Toggle ──
+if (tripleRiderToggle) {
+  tripleRiderToggle.addEventListener('change', () => {
+    state.show3rOnly = tripleRiderToggle.checked;
+    if (tripleRiderToggleLabel) {
+      tripleRiderToggleLabel.classList.toggle('active', state.show3rOnly);
+    }
+    state.page = 1;
+    loadImages();
+  });
+}
+
 // ── Render flat image rows ──
 function renderResults(results) {
   if (!results || results.length === 0) {
@@ -135,9 +151,13 @@ function renderResults(results) {
 
 // ── Build one image row (3 columns: original, mask, prediction) ──
 function buildImageRow(imgData, rowIdx) {
+  const is3r = imgData.filename.endsWith('_3r.jpg');
   const row = document.createElement('div');
-  row.className = 'instance-group';
+  row.className = 'instance-group' + (is3r ? ' triple-rider' : '');
   row.id = `row-${rowIdx}`;
+  row.dataset.is3r = is3r ? 'true' : 'false';
+
+  const badge3r = is3r ? `<span class="triple-rider-badge" style="margin-left: auto;">🏍️ Triple Rider</span>` : '';
 
   row.innerHTML = `
     <div class="group-header">
@@ -145,6 +165,7 @@ function buildImageRow(imgData, rowIdx) {
         <span class="group-video-label">Image</span>
         <span class="group-video-name" title="${imgData.filename}">${imgData.filename}</span>
       </div>
+      ${badge3r}
     </div>
   `;
 
@@ -330,6 +351,7 @@ function prefetchUrl(url) {
 function urlForPos(rowIdx, colIdx) {
   if (rowIdx < 0 || rowIdx >= state.currentResults.length) return null;
   const d = state.currentResults[rowIdx];
+  
   if (colIdx === 0) return d.original_url || null;
   if (colIdx === 1) return d.mask_url || null;
   if (colIdx === 2) return d.prediction_url || null;
@@ -380,30 +402,57 @@ function findNextImage(direction, rowIdx, colIdx) {
   const totalRows = state.currentResults.length;
   let r = rowIdx, c = colIdx;
 
+  const getBoundaryAction = (dir) => {
+    if (dir === 'ArrowUp' && state.page > 1) return { action: 'PREV_PAGE', targetCol: c };
+    if (dir === 'ArrowDown' && state.page < state.totalPages) return { action: 'NEXT_PAGE', targetCol: c };
+    return null;
+  };
+
   if (direction === 'ArrowLeft')  { c--; if (c < 0) return null; }
   else if (direction === 'ArrowRight') { c++; if (c > 2) return null; }
-  else if (direction === 'ArrowUp')    { r--; if (r < 0) return null; }
-  else if (direction === 'ArrowDown')  { r++; if (r >= totalRows) return null; }
+  else if (direction === 'ArrowUp')    { r--; if (r < 0) return getBoundaryAction('ArrowUp'); }
+  else if (direction === 'ArrowDown')  { r++; if (r >= totalRows) return getBoundaryAction('ArrowDown'); }
 
   // Skip missing images
   let tries = 0;
-  while (tries < 50) {
+  while (tries < 200) {
     const url = urlForPos(r, c);
     if (url) return { url, title: titleForPos(r, c), rowIdx: r, colIdx: c };
     if (direction === 'ArrowLeft')  { c--; if (c < 0) return null; }
     else if (direction === 'ArrowRight') { c++; if (c > 2) return null; }
-    else if (direction === 'ArrowUp')    { r--; if (r < 0) return null; }
-    else if (direction === 'ArrowDown')  { r++; if (r >= totalRows) return null; }
+    else if (direction === 'ArrowUp')    { r--; if (r < 0) return getBoundaryAction('ArrowUp'); }
+    else if (direction === 'ArrowDown')  { r++; if (r >= totalRows) return getBoundaryAction('ArrowDown'); }
     tries++;
   }
   return null;
 }
 
-function navigateModal(direction) {
-  if (!modalOverlay.classList.contains('open') || !state.modalPos) return;
+async function navigateModal(direction) {
+  if (!modalOverlay.classList.contains('open') || !state.modalPos || state.loading) return;
   const { rowIdx, colIdx } = state.modalPos;
   const next = findNextImage(direction, rowIdx, colIdx);
-  if (next) openModal(next.url, next.title, next.rowIdx, next.colIdx);
+  if (next) {
+    if (next.action === 'PREV_PAGE') {
+      modalImg.style.opacity = '0.5';
+      state.page -= 1;
+      await loadImages();
+      modalImg.style.opacity = '1';
+      const lastRow = state.currentResults.length - 1;
+      const finalNext = findNextImage('ArrowUp', lastRow + 1, next.targetCol);
+      if (finalNext && !finalNext.action) openModal(finalNext.url, finalNext.title, finalNext.rowIdx, finalNext.colIdx);
+      else closeModal();
+    } else if (next.action === 'NEXT_PAGE') {
+      modalImg.style.opacity = '0.5';
+      state.page += 1;
+      await loadImages();
+      modalImg.style.opacity = '1';
+      const finalNext = findNextImage('ArrowDown', -1, next.targetCol);
+      if (finalNext && !finalNext.action) openModal(finalNext.url, finalNext.title, finalNext.rowIdx, finalNext.colIdx);
+      else closeModal();
+    } else {
+      openModal(next.url, next.title, next.rowIdx, next.colIdx);
+    }
+  }
 }
 
 function updateModalNavButtons(rowIdx, colIdx) {
